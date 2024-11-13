@@ -8,19 +8,6 @@ export default function StoriesPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
 
-  // Redirect non-admin users to the login page
-  useEffect(() => {
-    if (status === "loading") return; // Wait for session loading
-    if (!session || session.user.role !== "admin") {
-      router.push("/login"); // Redirect to login if not admin
-    }
-  }, [session, status, router]);
-
-  // Loading state while checking session
-  if (status === "loading") {
-    return <p className="text-center text-lg text-yellow-400">Loading...</p>;
-  }
-
   // State for children data and form data
   const [children, setChildren] = useState([]);
   const [formData, setFormData] = useState({
@@ -30,8 +17,18 @@ export default function StoriesPage() {
     file: null,
   });
 
+  // Redirect non-admin users to the login page if they are not logged in or not an admin
+  useEffect(() => {
+    if (status === "loading") return; // Wait for session loading
+    if (!session || session.user.role !== "admin") {
+      router.push("/login"); // Redirect to login if not admin
+    }
+  }, [session, status, router]);
+
   // Fetch existing children information from the API
   useEffect(() => {
+    if (status === "loading") return; // Don't fetch data if session is still loading
+
     const fetchChildren = async () => {
       try {
         const response = await fetch("/api/children");
@@ -47,7 +44,7 @@ export default function StoriesPage() {
     };
 
     fetchChildren();
-  }, []);
+  }, [status]); // Fetch data when session status changes (after loading)
 
   // Handle form input changes
   const handleChange = (e) => {
@@ -86,13 +83,17 @@ export default function StoriesPage() {
     }
   };
 
+  // Loading state while checking session
+  if (status === "loading") {
+    return <p className="text-center text-lg text-yellow-400">Loading...</p>;
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 text-gray-800 p-6">
       <div className="max-w-3xl mx-auto bg-white p-8 rounded-lg shadow-lg">
-
         {/* Children Information Section */}
         <h2 className="text-3xl font-bold text-center text-[#ffbb02] mb-4">
-        Add Children Information
+          Add Children Information
         </h2>
 
         {/* Form */}

@@ -8,20 +8,7 @@ export default function StoriesPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
 
-  // Redirect non-admin users to the login page
-  useEffect(() => {
-    if (status === "loading") return; // Wait for session loading
-    if (!session || session.user.role !== "admin") {
-      router.push("/login"); // Redirect to login if not admin
-    }
-  }, [session, status, router]);
-
   // Loading state while checking session
-  if (status === "loading") {
-    return <p className="text-center text-lg text-yellow-400">Loading...</p>;
-  }
-
-  // State for children data and form data
   const [children, setChildren] = useState([]);
   const [formData, setFormData] = useState({
     name: "",
@@ -30,8 +17,17 @@ export default function StoriesPage() {
     file: null,
   });
 
+  // Redirect non-admin users to the login page
+  useEffect(() => {
+    if (status === "loading") return; // Wait for session loading
+    if (!session || session.user.role !== "admin") {
+      router.push("/login"); // Redirect to login if not admin
+    }
+  }, [session, status, router]);
+
   // Fetch existing children information from the API
   useEffect(() => {
+    if (status === "loading") return; // Don't fetch data if session is still loading
     const fetchChildren = async () => {
       try {
         const response = await fetch("/api/children");
@@ -47,7 +43,7 @@ export default function StoriesPage() {
     };
 
     fetchChildren();
-  }, []);
+  }, [status]); // Fetch children data only after the session is loaded
 
   // Handle form input changes
   const handleChange = (e) => {
@@ -85,6 +81,11 @@ export default function StoriesPage() {
       console.error("Error submitting form:", error);
     }
   };
+
+  // Loading state while checking session
+  if (status === "loading") {
+    return <p className="text-center text-lg text-yellow-400">Loading...</p>;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-800 p-6">
