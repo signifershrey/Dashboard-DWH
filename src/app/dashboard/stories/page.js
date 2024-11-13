@@ -1,7 +1,28 @@
 "use client";
-import React, { useState } from "react";
 
-export default function ChildrenPage() {
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import React, { useState, useEffect } from "react";
+
+export default function StoriesPage() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+
+  // Redirect non-admin users to the login page
+  useEffect(() => {
+    if (status === "loading") return; // Wait for session loading
+    if (!session || session.user.role !== "admin") {
+      router.push("/login"); // Redirect to login if not admin
+    }
+  }, [session, status, router]);
+
+  // Loading state while checking session
+  if (status === "loading") {
+    return <p className="text-center text-lg text-yellow-400">Loading...</p>;
+  }
+
+  // State for children data and form data
+  const [children, setChildren] = useState([]);
   const [formData, setFormData] = useState({
     name: "",
     bio: "",
@@ -9,6 +30,26 @@ export default function ChildrenPage() {
     file: null,
   });
 
+  // Fetch existing children information from the API
+  useEffect(() => {
+    const fetchChildren = async () => {
+      try {
+        const response = await fetch("/api/children");
+        if (response.ok) {
+          const data = await response.json();
+          setChildren(data);
+        } else {
+          console.error("Failed to fetch children data");
+        }
+      } catch (error) {
+        console.error("Error fetching children data:", error);
+      }
+    };
+
+    fetchChildren();
+  }, []);
+
+  // Handle form input changes
   const handleChange = (e) => {
     const { name, value, files } = e.target;
     if (name === "file") {
@@ -18,23 +59,25 @@ export default function ChildrenPage() {
     }
   };
 
+  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const formData = new FormData();
-    formData.append("name", formData.name);
-    formData.append("bio", formData.bio);
-    formData.append("ebookLink", formData.ebookLink);
-    formData.append("image", formData.file); // Set the file for upload
+    const formDataToSend = new FormData();
+    formDataToSend.append("name", formData.name);
+    formDataToSend.append("bio", formData.bio);
+    formDataToSend.append("ebookLink", formData.ebookLink);
+    formDataToSend.append("file", formData.file); // Attach uploaded file
 
     try {
       const response = await fetch("/api/children", {
         method: "POST",
-        body: formData,
+        body: formDataToSend,
       });
 
       if (response.ok) {
         const newChild = await response.json();
-        // handle successful submission, e.g., update state or show message
+        setChildren((prev) => [...prev, newChild]); // Update state with new child
+        setFormData({ name: "", bio: "", ebookLink: "", file: null }); // Reset form fields
       } else {
         console.error("Failed to create child");
       }
@@ -44,99 +87,85 @@ export default function ChildrenPage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6 bg-white shadow-md rounded-lg">
-      <h1 className="text-3xl font-semibold text-center text-gray-700 mb-8">
-        Add Children's Information
-      </h1>
+    <div className="min-h-screen bg-gray-50 text-gray-800 p-6">
+      <div className="max-w-3xl mx-auto bg-white p-8 rounded-lg shadow-lg">
 
-      <form
-        onSubmit={handleSubmit}
-        encType="multipart/form-data"
-        className="space-y-6"
-      >
-        <div>
-          <label
-            htmlFor="name"
-            className="block text-lg font-medium text-gray-600 mb-2"
-          >
-            Child's Name
-          </label>
+        {/* Children Information Section */}
+        <h2 className="text-3xl font-bold text-center text-[#ffbb02] mb-4">
+        Add Children Information
+        </h2>
+
+        {/* Form */}
+        <form
+          onSubmit={handleSubmit}
+          encType="multipart/form-data"
+          className="space-y-4"
+        >
           <input
             type="text"
             name="name"
-            id="name"
-            placeholder="Enter child's name"
+            placeholder="Child's Name"
             value={formData.name}
             onChange={handleChange}
             required
             className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#ffbb02] focus:border-transparent"
           />
-        </div>
-
-        <div>
-          <label
-            htmlFor="bio"
-            className="block text-lg font-medium text-gray-600 mb-2"
-          >
-            Child's Bio
-          </label>
           <textarea
             name="bio"
-            id="bio"
-            placeholder="Enter child's bio"
+            placeholder="Child's Bio"
             value={formData.bio}
             onChange={handleChange}
             required
             className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#ffbb02] focus:border-transparent"
           />
-        </div>
-
-        <div>
-          <label
-            htmlFor="ebookLink"
-            className="block text-lg font-medium text-gray-600 mb-2"
-          >
-            Ebook Link
-          </label>
           <input
             type="url"
             name="ebookLink"
-            id="ebookLink"
-            placeholder="Enter ebook link"
+            placeholder="Ebook Link"
             value={formData.ebookLink}
             onChange={handleChange}
             required
             className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#ffbb02] focus:border-transparent"
           />
-        </div>
-
-        <div>
-          <label
-            htmlFor="file"
-            className="block text-lg font-medium text-gray-600 mb-2"
-          >
-            Upload Image
-          </label>
           <input
             type="file"
             name="file"
-            id="file"
             onChange={handleChange}
             accept="image/*"
             required
             className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#ffbb02] focus:border-transparent"
           />
-        </div>
-
-        <div className="text-center">
           <button
             type="submit"
-            className="w-full p-3 bg-[#ffbb02] text-white font-semibold rounded-md hover:bg-[#e6a600] focus:outline-none focus:ring-2 focus:ring-[#ffbb02]"
+            className="w-full p-3 bg-[#ffbb02] text-white font-semibold rounded-md hover:bg-[#e6a600] focus:outline-none focus:ring-2 focus:ring-[#e6a600] focus:ring-opacity-50"
           >
             Add Child
           </button>
-        </div>
-      </form>
+        </form>
+
+        {/* Display list of children */}
+        <ul className="mt-6 space-y-4">
+          {children.map((child) => (
+            <li
+              key={child.id}
+              className="p-4 bg-gray-100 border border-gray-300 rounded-md shadow-sm"
+            >
+              <h3 className="text-xl font-semibold text-[#ffbb02]">
+                {child.name}
+              </h3>
+              <p className="text-gray-700">{child.bio}</p>
+              <a
+                href={child.ebookLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[#ffbb02] underline mt-2 block"
+              >
+                View eBook
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
   );
 }
