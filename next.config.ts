@@ -5,7 +5,15 @@ module.exports = {
       {
         source: "/",
         destination: "/login",
-        permanent: false, // temporary redirect
+        permanent: false, // Temporary redirect
+      },
+    ];
+  },
+  async rewrites() {
+    return [
+      {
+        source: "/api/donations",
+        destination: "https://www.docswithinborders.org/api/donations",
       },
     ];
   },
