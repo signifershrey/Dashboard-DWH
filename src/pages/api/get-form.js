@@ -11,7 +11,7 @@ export default async function handler(req, res) {
   }
 
   // Connect to the database
-  const { conn } = await connectToDatabase();
+  connectToDatabase();
 
   try {
     // Retrieve the form by formId (or you can use _id instead)

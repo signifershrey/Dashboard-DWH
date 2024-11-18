@@ -1,12 +1,12 @@
 "use client";
 import { useState, useEffect } from "react";
+import Image from "next/image";
 
 export default function RetrieveAllForms() {
   const [forms, setForms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Fetch all forms on component mount
   useEffect(() => {
     const fetchForms = async () => {
       try {
@@ -19,7 +19,7 @@ export default function RetrieveAllForms() {
           setError(data.message || "Failed to fetch forms");
         }
       } catch (err) {
-        setError("An error occurred while fetching the forms.");
+        setError(`An error occurred while fetching the forms. ${err}`);
       } finally {
         setLoading(false);
       }
@@ -57,10 +57,12 @@ export default function RetrieveAllForms() {
                 Ebook Link
               </a>
               {form.imageUrl && (
-                <img
+                <Image
                   src={form.imageUrl}
                   alt="Form Image"
-                  style={{ maxWidth: "100%", height: "auto" }}
+                  // style={{ maxWidth: "100%", height: "auto" }}
+                  width={500} // Provide width
+                  height={300} // Provide height
                 />
               )}
             </div>
