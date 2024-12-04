@@ -28,10 +28,11 @@ export default function DonationLinksPage() {
   useEffect(() => {
     const fetchPaymentLinks = async () => {
       try {
-        const response = await fetch("/api/proxy-paymentlinks");
+        const response = await fetch("/api/proxy/proxy-paymentlinks");
         if (!response.ok) throw new Error("Failed to fetch payment links");
 
         const data = await response.json();
+             
         setPaymentLinks(data);
       } catch (error) {
         console.error(error);
@@ -50,22 +51,40 @@ export default function DonationLinksPage() {
     }));
   };
 
-  const handleUpdate = async () => {
-    try {
-      const response = await fetch("/api/proxy-paymentlinks", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(paymentLinks),
-      });
-      if (!response.ok) throw new Error("Failed to update payment links");
-      alert("Payment links updated successfully!");
-    } catch (error) {
-      console.error(error);
-      alert("Failed to update payment links.");
+const handleUpdate = async () => {
+  // Exclude _id from the payload before sending it to the backend
+  const { _id, ...paymentLinksWithoutId } = paymentLinks;
+
+  console.log("Payload to send (without _id):", paymentLinksWithoutId); // Log the payload without _id
+
+  try {
+    const response = await fetch("/api/proxy/proxy-paymentlinks", {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(paymentLinksWithoutId), // Send without _id
+    });
+
+    const responseData = await response.json();
+    console.log("Response from PATCH API:", responseData);
+
+    if (!response.ok) {
+      throw new Error(responseData.error || "Failed to update payment links");
     }
-  };
+
+    alert("Payment links updated successfully!");
+
+    // Refetch the updated payment links
+    const updatedResponse = await fetch("/api/proxy/proxy-paymentlinks");
+    const updatedData = await updatedResponse.json();
+    setPaymentLinks(updatedData); // Update state with new data
+  } catch (error) {
+    console.error("Error updating links:", error);
+    alert("Failed to update payment links.");
+  }
+};
+
 
   if (status === "loading" || isLoading) {
     return (
